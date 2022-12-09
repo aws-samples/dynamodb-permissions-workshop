@@ -24,7 +24,7 @@ from datetime import datetime
 dynamodb = boto3.resource("dynamodb")
 cf_client = boto3.client("cloudformation")
 stackname = "DdbPermissionsLabStack"
-table_name = "second_table_dummy"
+table_name = "batch_processing_one"
 
 try:
     response = cf_client.describe_stacks(StackName=stackname)
@@ -37,6 +37,7 @@ try:
 except ClientError:
     print("You need to run cdk deploy first to get the stack deployed.")
 
+start_program = time.time()
 if table_name:
     table = dynamodb.Table(table_name)
 
@@ -47,7 +48,13 @@ if table_name:
 
     with table.batch_writer() as batch:
         counter = 0
-        # 5 times looping this file, it will take ~5 mins
+        batches = 0
+        seconds = 0
+        start = time.time()
+
+        # To simulate traffic you can update this loop to 10
+        # 5 will take 930 seconds with ramp-up or 300 with on demand tables
+
         for loop in range(5):
             for item in customers:
                 record = {}
@@ -61,23 +68,35 @@ if table_name:
                 batch.put_item(Item=record)
                 counter += 1
 
-                if counter < 240:
-                    time.sleep(1)
-                elif counter < 480:
-                    time.sleep(0.5)
+                if counter % 25 == 0:
+                    batches += 1
+                    end = time.time()
+                    timediff = 1 - (end - start)
+                    start = time.time()
+                    if seconds < 180 and batches % 4 == 0:
+                        print(
+                            f"Less than 3 mins - Batch of 100 sleeping for {timediff} seconds"
+                        )
+                        time.sleep(timediff)
+                        seconds += 1
+                    elif seconds < 360 and batches % 8 == 0:
+                        print(
+                            f"Less than 6 mins - Batch of 100 sleeping for {timediff} seconds"
+                        )
+                        time.sleep(timediff)
+                        seconds += 1
+                    elif seconds < 540 and batches % 12 == 0:
+                        print(
+                            f"Less than 9 mins - Batch of 100 sleeping for {timediff} seconds"
+                        )
+                        time.sleep(timediff)
+                        seconds += 1
 
                 if counter % 100 == 0:
                     right_now = datetime.now().isoformat()
                     print(
                         f"{counter} - A batch of 100 records have been processed {right_now}"
                     )
-                    # time.sleep(2)
-                # counter = 0
 
-    # trips = []
-    # with open("mock_data_trips.json", "r") as file2:
-    #     trips = json.load(file2)
-
-    # with table.batch_writer() as batch:
-    #     for item in trips:
-    #         batch.put_item(Item=item)
+end_program = time.time()
+print("Program completed in %s", end_program - start_program)
