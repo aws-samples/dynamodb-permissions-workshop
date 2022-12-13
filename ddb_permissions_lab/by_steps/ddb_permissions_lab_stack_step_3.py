@@ -80,8 +80,18 @@ class DdbPermissionsLabStack(Stack):
                     resources=[ddb_table.table_arn],
                     actions=["dynamodb:Query"],
                     conditions={
-                        "DateGreaterThan": {
-                            "aws:CurrentTime": "2022-12-01T19:00:00Z",
+                        "ForAllValues:StringEquals": {
+                            "dynamodb:Attributes": [
+                                "PK",
+                                "SK",
+                                "trip_id",
+                                "user_name",
+                                "status",
+                                "date_time",
+                            ]
+                        },
+                        "StringEqualsIfExists": {
+                            "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
                         },
                     },
                 ),

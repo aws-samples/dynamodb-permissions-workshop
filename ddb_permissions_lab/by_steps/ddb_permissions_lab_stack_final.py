@@ -56,30 +56,7 @@ class DdbPermissionsLabStack(Stack):
 
         return dynamodb_table
 
-    # def _set_ddb_trigger_function(self, ddb_table):
-    #     async_lambda = _lambda.Function(
-    #         self,
-    #         "AsyncHandler",
-    #         runtime=_lambda.Runtime.PYTHON_3_9,
-    #         code=_lambda.Code.from_asset("asycn_lambda"),
-    #         handler="app.handler",
-    #         environment={
-    #             "APP_TABLE_NAME": ddb_table.table_name,
-    #         },
-    #     )
-
     def _scan_lambda(self, ddb_table):
-
-        # lambda_role = iam.Role(
-        #     scope=self,
-        #     id="cdk-lambda-role",
-        #     assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-        #     role_name="cdk-lambda-role",
-        #     inline_policies=iam.PolicyStatement(
-        #         actions=["dynamodb:Query", "dynamodb:Scan", "dynamodb:GetItem"],
-        #         resources=[ddb_table.table_arn],
-        #     ),
-        # )
 
         scan_lambda = _lambda.Function(
             self,
@@ -100,31 +77,29 @@ class DdbPermissionsLabStack(Stack):
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     resources=[ddb_table.table_arn],
-                    # actions=["dynamodb:Scan", "dynamodb:Query"],
                     actions=["dynamodb:Query"],
-                    # Date condition - Ok
-                    # conditions={
-                    #     "DateGreaterThan": {
-                    #         "aws:CurrentTime": "2022-12-01T19:00:00Z",
-                    #     },
-                    # },
-                ),
-                # iam.PolicyStatement(
-                #     effect=iam.Effect.DENY,
-                #     resources=[ddb_table.table_arn],
-                #     actions=["dynamodb:*"],
-                #     conditions={
-                #         "StringNotEquals": {"aws:sourceVpce": "vpce-0f8a24fe67a37dad5"}
-                #     },
-                # ),
-                iam.PolicyStatement(
-                    effect=iam.Effect.ALLOW,
-                    resources=[ddb_table.table_arn],
-                    actions=["dynamodb:UpdateItem"],
                     conditions={
-                        "ForAllValues:StringNotLike": {
-                            "dynamodb:Attributes": ["user_name"]
-                        }
+                        "ForAllValues:StringEquals": {
+                            "dynamodb:Attributes": [
+                                "PK",
+                                "SK",
+                                "trip_id",
+                                "user_name",
+                                "status",
+                                "date_time",
+                            ]
+                        },
+                        "StringEqualsIfExists": {
+                            "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
+                        },
+                    },
+                ),
+                iam.PolicyStatement(
+                    effect=iam.Effect.DENY,
+                    resources=[ddb_table.table_arn],
+                    actions=["dynamodb:*"],
+                    conditions={
+                        "StringNotEquals": {"aws:sourceVpce": "vpce-0f8a24fe67a37dad5"}
                     },
                 ),
             ],
@@ -203,5 +178,3 @@ class DdbPermissionsLabStack(Stack):
             starting_position="LATEST",
             batch_size=1,
         )
-        # CDK NAG
-        # Aspects.of(self).add(cdk_nag.AwsSolutionsChecks())

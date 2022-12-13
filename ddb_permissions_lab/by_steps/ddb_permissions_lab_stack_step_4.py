@@ -91,11 +91,20 @@ class DdbPermissionsLabStack(Stack):
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     resources=[ddb_table.table_arn],
-                    # actions=["dynamodb:Scan", "dynamodb:Query"],
                     actions=["dynamodb:Query"],
                     conditions={
-                        "DateGreaterThan": {
-                            "aws:CurrentTime": "2022-12-01T19:00:00Z",
+                        "ForAllValues:StringEquals": {
+                            "dynamodb:Attributes": [
+                                "PK",
+                                "SK",
+                                "trip_id",
+                                "user_name",
+                                "status",
+                                "date_time",
+                            ]
+                        },
+                        "StringEqualsIfExists": {
+                            "dynamodb:Select": "SPECIFIC_ATTRIBUTES"
                         },
                     },
                 ),
@@ -105,16 +114,6 @@ class DdbPermissionsLabStack(Stack):
                     actions=["dynamodb:*"],
                     conditions={
                         "StringNotEquals": {"aws:sourceVpce": "vpce-0f8a24fe67a37dad5"}
-                    },
-                ),
-                iam.PolicyStatement(
-                    effect=iam.Effect.ALLOW,
-                    resources=[ddb_table.table_arn],
-                    actions=["dynamodb:UpdateItem"],
-                    conditions={
-                        "ForAllValues:StringNotLike": {
-                            "dynamodb:Attributes": ["user_name"]
-                        }
                     },
                 ),
             ],

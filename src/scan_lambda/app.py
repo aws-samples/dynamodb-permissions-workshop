@@ -48,6 +48,26 @@ def query_user(user_name):
     return items
 
 
+def specific_query(user_name):
+    items = dynamodb_client.query(
+        TableName=os.environ.get("DDB_TABLE_NAME", ""),
+        KeyConditionExpression="#pk = :pk and begins_with(#sk, :sk)",
+        ExpressionAttributeNames={
+            "#pk": "PK",
+            "#sk": "SK",
+            "#u": "user_name",
+            "#d": "date_time",
+            "#s": "status",
+        },
+        ExpressionAttributeValues={
+            ":pk": {"S": f"{user_name}"},
+            ":sk": {"S": "COMPLETED"},
+        },
+        ProjectionExpression="PK,SK,trip_id,#s,#u, #d",
+    )["Items"]
+    return items
+
+
 def update_user(item):
     update_expression = "SET #user_name = :user_name"
     expression_attributes = {"#user_name": "user_name"}
@@ -72,5 +92,6 @@ def handler(event, context):
 
     results = scan_table()
     # results = query_user("lastley98")
+    # results = specific_query("lastley98")
     print(json.dumps(results))
     return {"result": results}
