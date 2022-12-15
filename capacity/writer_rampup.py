@@ -24,18 +24,18 @@ from datetime import datetime
 dynamodb = boto3.resource("dynamodb")
 cf_client = boto3.client("cloudformation")
 stackname = "DdbPermissionsLabStack"
-table_name = "batch_processing_one"
+table_name = "batch_processing_zero"
 
-try:
-    response = cf_client.describe_stacks(StackName=stackname)
-    outputs = response["Stacks"][0]["Outputs"]
-    for output in outputs:
-        keyName = output["OutputKey"]
-        if keyName == "PermissionsTableName":
-            print(output["OutputValue"])
-            table_name = output["OutputValue"]
-except ClientError:
-    print("You need to run cdk deploy first to get the stack deployed.")
+# try:
+#     response = cf_client.describe_stacks(StackName=stackname)
+#     outputs = response["Stacks"][0]["Outputs"]
+#     for output in outputs:
+#         keyName = output["OutputKey"]
+#         if keyName == "PermissionsTableName":
+#             print(output["OutputValue"])
+#             table_name = output["OutputValue"]
+# except ClientError:
+#     print("You need to run cdk deploy first to get the stack deployed.")
 
 start_program = time.time()
 if table_name:
